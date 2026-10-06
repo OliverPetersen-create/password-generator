@@ -4,13 +4,18 @@ const characters = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O",
 let inputTextEl = document.querySelectorAll("input");
 let canCopy = false;
 let passwords = [];
+let cancelAnimation = [];
 
 for (let i = 0; i < inputTextEl.length; i++) {
     inputTextEl[i].addEventListener("click", function(){
         if (!canCopy) return;
-        navigator.clipboard.writeText(inputTextEl[i].value);
+        navigator.clipboard.writeText(passwords[i]);
+        inputTextEl[i].value = "Kopieret";
     });
     inputTextEl[i].addEventListener("mouseenter", function() {
+        if (!isCancelled(i)) {
+            cancelAnimation.push(i);
+        }
         if (canCopy) {
             inputTextEl[i].style.cursor = "pointer";
             inputTextEl[i].value = "Klik for at kopier";
@@ -25,19 +30,54 @@ for (let i = 0; i < inputTextEl.length; i++) {
     });
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function passwordAnimation(index) {
+    let shown = "";
+    let cancel = false;
+    for (let i = 0; i < passwords[index].length; i++) {
+        cancel = isCancelled(index);
+        if (cancel) {
+            cancelAnimation.splice(cancel - 1, 0);
+            return;
+        }
+        for (let frames = 0; frames < 3; frames++) {
+            cancel = isCancelled(index);
+            if (cancel) {
+                cancelAnimation.splice(cancel - 1, 0);
+                return;
+            }
+            inputTextEl[index].value = shown + getPassword(passwords[index].length - i);
+            await sleep(50);
+        }
+        shown += passwords[index].at(i);
+    }
+    inputTextEl[index].value = passwords[index];
+}
+
 function generatePasswords() {
     passwords = [];
+    cancelAnimation = [];
     for (let i = 0; i < inputTextEl.length; i++) {
-        passwords.push(getPasswords());
-        inputTextEl[i].value = passwords[i];
+        passwords.push(getPassword());
+        passwordAnimation(i);
     }
     canCopy = true;
 }
 
-function getPasswords() {
+function getPassword(length) {
     let password = "";
-    for (let i = 0; i < Math.floor(Math.random() * 10) + 10; i++) {
+    for (let i = 0; i < (length == null ? Math.floor(Math.random() * 10) + 10 : length); i++) {
         password += characters[Math.floor(Math.random() * characters.length)];
     }
     return password;
+}
+
+function isCancelled(animation) {
+    for (let i = 0; i < cancelAnimation.length; i++) {
+        if (cancelAnimation[i] === animation) return i + 1;
+    }
+    return false;
 }
