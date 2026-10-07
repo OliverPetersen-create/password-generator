@@ -4,7 +4,7 @@ const characters = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O",
 let inputTextEl = document.querySelectorAll("input");
 let canCopy = false;
 let passwords = [];
-let cancelAnimation = [];
+let animations = {};
 
 for (let i = 0; i < inputTextEl.length; i++) {
     inputTextEl[i].addEventListener("click", function(){
@@ -13,8 +13,8 @@ for (let i = 0; i < inputTextEl.length; i++) {
         inputTextEl[i].value = "Kopieret";
     });
     inputTextEl[i].addEventListener("mouseenter", function() {
-        if (!isCancelled(i)) {
-            cancelAnimation.push(i);
+        if (Object.hasOwn(animations, i)) {
+            delete animations[i];
         }
         if (canCopy) {
             inputTextEl[i].style.cursor = "pointer";
@@ -30,54 +30,51 @@ for (let i = 0; i < inputTextEl.length; i++) {
     });
 }
 
-function sleep(ms) {
+const sleep = function(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function passwordAnimation(index) {
+const uid = function() {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2, 12).padStart(12, 0);
+}
+
+const passwordAnimation = async function(index) {
     let shown = "";
-    let cancel = false;
+    let animationUid = uid();
+    animations[index] = animationUid;
     for (let i = 0; i < passwords[index].length; i++) {
-        cancel = isCancelled(index);
-        if (cancel) {
-            cancelAnimation.splice(cancel - 1, 0);
+        if (animations[index] !== animationUid) {
             return;
         }
         for (let frames = 0; frames < 3; frames++) {
-            cancel = isCancelled(index);
-            if (cancel) {
-                cancelAnimation.splice(cancel - 1, 0);
+            if (animations[index] !== animationUid) {
                 return;
             }
-            inputTextEl[index].value = shown + getPassword(passwords[index].length - i);
-            await sleep(50);
+            inputTextEl[index].value = shown + generatePassword(passwords[index].length - i);
+            await sleep(25);
         }
         shown += passwords[index].at(i);
+    }
+    if (animations[index] === animationUid) {
+        delete animations[index];
     }
     inputTextEl[index].value = passwords[index];
 }
 
-function generatePasswords() {
+const setPasswords = function() {
     passwords = [];
-    cancelAnimation = [];
+    animations = {};
     for (let i = 0; i < inputTextEl.length; i++) {
-        passwords.push(getPassword());
+        passwords.push(generatePassword());
         passwordAnimation(i);
     }
     canCopy = true;
 }
 
-function getPassword(length) {
+const generatePassword = function(length) {
     let password = "";
-    for (let i = 0; i < (length == null ? Math.floor(Math.random() * 10) + 10 : length); i++) {
+    for (let i = 0; i < (length === undefined ? Math.floor(Math.random() * 10) + 10 : length); i++) {
         password += characters[Math.floor(Math.random() * characters.length)];
     }
     return password;
-}
-
-function isCancelled(animation) {
-    for (let i = 0; i < cancelAnimation.length; i++) {
-        if (cancelAnimation[i] === animation) return i + 1;
-    }
-    return false;
 }
