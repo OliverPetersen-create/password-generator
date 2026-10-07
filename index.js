@@ -7,10 +7,14 @@ let passwords = [];
 let animations = {};
 
 for (let i = 0; i < inputTextEl.length; i++) {
-    inputTextEl[i].addEventListener("click", function(){
+    inputTextEl[i].addEventListener("click", async function(){
         if (!canCopy) return;
-        navigator.clipboard.writeText(passwords[i]);
-        inputTextEl[i].value = "Kopieret";
+        try {
+            await navigator.clipboard.writeText(passwords[i]);
+            inputTextEl[i].value = "Kopieret";
+        } catch {
+            inputTextEl[i].value = "Noget gik galt";
+        }
     });
     inputTextEl[i].addEventListener("mouseenter", function() {
         if (Object.hasOwn(animations, i)) {
@@ -18,7 +22,7 @@ for (let i = 0; i < inputTextEl.length; i++) {
         }
         if (canCopy) {
             inputTextEl[i].style.cursor = "pointer";
-            inputTextEl[i].value = "Klik for at kopier";
+            inputTextEl[i].value = "Klik for at kopiere";
             inputTextEl[i].style.background = "rgb(46, 76, 110)";
         } else inputTextEl[i].style.cursor = "default";
     });
@@ -55,9 +59,8 @@ const passwordAnimation = async function(index) {
         }
         shown += passwords[index].at(i);
     }
-    if (animations[index] === animationUid) {
-        delete animations[index];
-    }
+    if (animations[index] !== animationUid) return;
+    delete animations[index];
     inputTextEl[index].value = passwords[index];
 }
 
@@ -73,7 +76,8 @@ const setPasswords = function() {
 
 const generatePassword = function(length) {
     let password = "";
-    for (let i = 0; i < (length === undefined ? Math.floor(Math.random() * 10) + 10 : length); i++) {
+    let loops = (length === undefined ? Math.floor(Math.random() * 10) + 10 : length);
+    for (let i = 0; i < loops; i++) {
         password += characters[Math.floor(Math.random() * characters.length)];
     }
     return password;
